@@ -75,7 +75,7 @@ jobs:
       run: |
         cd $KERNEL
         make clean
-        make
+        make ANDROID_NDK=$ANDROID_NDK_HOME
 
     # 合并构建
     - name: 合并构建
