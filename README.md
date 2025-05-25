@@ -23,6 +23,11 @@ make.bat
 1. **自动构建**：当代码推送到main/master分支或创建Pull Request时，会自动触发构建流程。
 2. **手动构建**：在GitHub仓库的Actions页面可以手动触发构建，并选择构建类型（全部、仅Android、仅Linux）。
 
+构建产物包括：
+- Android和Linux版本的补丁程序
+- 内核模块（kpimg）
+- KPM模块（kpms文件夹中的demo模块）
+
 构建完成后，可以在Actions运行记录中下载构建产物。
 
 ## Thanks

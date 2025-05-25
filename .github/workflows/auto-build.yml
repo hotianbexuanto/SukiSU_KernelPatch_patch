@@ -118,12 +118,42 @@ jobs:
         cmake .. && make
         mv patch patch_linux
 
+    # 构建KPM模块
+    - name: 构建KPM模块
+      run: |
+        cd $GITHUB_WORKSPACE
+        # 设置TARGET_COMPILE变量为NDK的GCC编译器路径
+        export TARGET_COMPILE="${ANDROID_NDK}/toolchains/llvm/prebuilt/linux-x86_64/bin/"
+        export KP_DIR=$GITHUB_WORKSPACE
+        
+        # 构建demo-hello模块
+        cd $GITHUB_WORKSPACE/kpms/demo-hello
+        make clean
+        make
+        
+        # 构建demo-inlinehook模块
+        cd $GITHUB_WORKSPACE/kpms/demo-inlinehook
+        make clean
+        make
+        
+        # 构建demo-syscallhook模块
+        cd $GITHUB_WORKSPACE/kpms/demo-syscallhook
+        make clean
+        make
+        
+        # 创建目录存放所有kpm文件
+        mkdir -p $GITHUB_WORKSPACE/kpm_modules
+        cp $GITHUB_WORKSPACE/kpms/demo-hello/*.kpm $GITHUB_WORKSPACE/kpm_modules/ || true
+        cp $GITHUB_WORKSPACE/kpms/demo-inlinehook/*.kpm $GITHUB_WORKSPACE/kpm_modules/ || true
+        cp $GITHUB_WORKSPACE/kpms/demo-syscallhook/*.kpm $GITHUB_WORKSPACE/kpm_modules/ || true
+
     # 上传构建产物
     - name: 上传构建产物
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
         name: build-artifacts
         path: |
           ${{ env.PATCH }}/build-android/patch_android
           ${{ env.PATCH }}/build-linux/patch_linux
-          ${{ env.KERNEL }}/kpimg 
+          ${{ env.KERNEL }}/kpimg
+          ${{ github.workspace }}/kpm_modules 
