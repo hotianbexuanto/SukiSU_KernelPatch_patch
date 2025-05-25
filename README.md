@@ -4,6 +4,27 @@
 
 这是一个fork自bmax121的KernelPatch，经过剪裁后用于给SukiSU Ultra提供KPM支持
 
+## 构建
+
+### 本地构建
+
+```bash
+# 在Linux环境下
+./build.sh
+
+# 在Windows环境下
+make.bat
+```
+
+### GitHub Actions构建
+
+本项目支持通过GitHub Actions进行自动化构建：
+
+1. **自动构建**：当代码推送到main/master分支或创建Pull Request时，会自动触发构建流程。
+2. **手动构建**：在GitHub仓库的Actions页面可以手动触发构建，并选择构建类型（全部、仅Android、仅Linux）。
+
+构建完成后，可以在Actions运行记录中下载构建产物。
+
 ## Thanks
 
 [APatch](https://github.com/bmax121/APatch)

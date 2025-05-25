@@ -1,0 +1,143 @@
+name: 手动构建
+
+# 设置手动触发工作流
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: '构建类型'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+        - all
+        - android
+        - linux
+
+# 权限设置
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    # 检出代码
+    - name: 检出代码
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    # 设置环境
+    - name: 设置环境
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake xxd
+    
+    # 设置Android NDK
+    - name: 设置Android NDK
+      if: ${{ github.event.inputs.build_type == 'android' || github.event.inputs.build_type == 'all' }}
+      uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r28
+        add-to-path: true
+
+    # 设置环境变量
+    - name: 设置环境变量
+      run: |
+        echo "HOME=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+        echo "TOOLS=$GITHUB_WORKSPACE/tools" >> $GITHUB_ENV
+        echo "PATCH=$GITHUB_WORKSPACE/patch" >> $GITHUB_ENV
+        echo "KERNEL=$GITHUB_WORKSPACE/kernel" >> $GITHUB_ENV
+        echo "ANDROID_NDK=$ANDROID_NDK_HOME" >> $GITHUB_ENV
+        echo "NDK_HOME=$ANDROID_NDK_HOME" >> $GITHUB_ENV
+
+    # 构建Android版本
+    - name: 构建Android版本
+      if: ${{ github.event.inputs.build_type == 'android' || github.event.inputs.build_type == 'all' }}
+      run: |
+        cd $TOOLS
+        rm -rf build/android
+        mkdir -p build/android
+        cd build/android
+        cmake \
+          -DCMAKE_TOOLCHAIN_FILE="$NDK_HOME/build/cmake/android.toolchain.cmake" \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DANDROID_PLATFORM=android-33 \
+          -DANDROID_ABI=arm64-v8a ../..
+        cmake --build .
+        mv kptools kptools-android
+
+    # 构建Linux版本
+    - name: 构建Linux版本
+      if: ${{ github.event.inputs.build_type == 'linux' || github.event.inputs.build_type == 'all' }}
+      run: |
+        cd $TOOLS
+        mkdir -p build
+        cd build
+        cmake ..
+        make
+        mv kptools kptools-linux
+
+    # 构建内核模块
+    - name: 构建内核模块
+      if: ${{ github.event.inputs.build_type == 'all' }}
+      run: |
+        cd $KERNEL
+        make clean
+        make
+
+    # 合并构建
+    - name: 合并构建
+      if: ${{ github.event.inputs.build_type == 'all' }}
+      run: |
+        mkdir -p $PATCH/res
+        cp -r $TOOLS/build/android/kptools-android $PATCH/res || true
+        cp -r $TOOLS/build/kptools-linux $PATCH/res || true
+        cp -r $KERNEL/kpimg $PATCH/res || true
+        
+        cd $PATCH
+        
+        xxd -i res/kpimg.enc > include/kpimg_enc.h || true
+        xxd -i res/kptools-linux > include/kptools_linux.h || true
+        xxd -i res/kptools-android > include/kptools_android.h || true
+
+    # 构建Android补丁
+    - name: 构建Android补丁
+      if: ${{ github.event.inputs.build_type == 'android' || github.event.inputs.build_type == 'all' }}
+      run: |
+        cd $PATCH
+        rm -rf build-android
+        mkdir -p build-android
+        cd build-android
+        
+        cmake .. \
+          -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK}/build/cmake/android.toolchain.cmake \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DANDROID_ABI=arm64-v8a \
+          -DANDROID_PLATFORM=android-33 \
+          -DANDROID_STL=c++_static
+        
+        cmake --build .
+        
+    # 构建Linux补丁
+    - name: 构建Linux补丁
+      if: ${{ github.event.inputs.build_type == 'linux' || github.event.inputs.build_type == 'all' }}
+      run: |
+        cd $PATCH
+        rm -rf build-linux
+        mkdir -p build-linux
+        cd build-linux
+        cmake .. && make
+        mv patch patch_linux
+
+    # 上传构建产物
+    - name: 上传构建产物
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-artifacts
+        path: |
+          ${{ env.PATCH }}/build-android/patch_android
+          ${{ env.PATCH }}/build-linux/patch_linux
+          ${{ env.KERNEL }}/kpimg 
