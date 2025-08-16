@@ -18,7 +18,7 @@
 #else
 #include "kptools_linux.h"
 #endif
-#include "include/header.h"
+#include "header.h"
 
 #if !defined(__NR_memfd_create)
 #if __ANDROID_API__ < 29
@@ -94,7 +94,7 @@ std::string fd_to_path(int fd) {
 int main() try {
     check_file_exists("Image");
 
-    #ifdef __aarch64__
+    #ifdef __ANDROID__
         std::vector<uint8_t> kptools_data(res_kptools_android, res_kptools_android + res_kptools_android_len);
     #else
         std::vector<uint8_t> kptools_data(res_kptools_linux, res_kptools_linux + res_kptools_linux_len);

@@ -128,6 +128,15 @@ jobs:
       - name: Build patch-linux
         run: |
           cd patch
+          # 先编译encrypt工具
+          g++ -O3 -o encrypt encrypt.cpp
+          # 生成加密文件
+          ./encrypt res/kpimg res/kpimg.enc
+          # 生成头文件
+          mkdir -p include
+          xxd -i res/kpimg.enc > include/kpimg_enc.h
+          xxd -i res/kptools-linux > include/kptools_linux.h
+          # 编译主程序
           mkdir -p build-linux && cd build-linux
           cmake .. && make
           ls -la
@@ -189,6 +198,15 @@ jobs:
       - name: Build patch-android
         run: |
           cd patch
+          # 先用主机编译器编译encrypt工具
+          g++ -O3 -o encrypt encrypt.cpp
+          # 生成加密文件
+          ./encrypt res/kpimg res/kpimg.enc
+          # 生成头文件
+          mkdir -p include
+          xxd -i res/kpimg.enc > include/kpimg_enc.h
+          xxd -i res/kptools-android > include/kptools_android.h
+          # 编译Android版本
           mkdir -p build-android && cd build-android
           cmake .. \
             -DCMAKE_TOOLCHAIN_FILE=${{ steps.setup-ndk.outputs.ndk-path }}/build/cmake/android.toolchain.cmake \
