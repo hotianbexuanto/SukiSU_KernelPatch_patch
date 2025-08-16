@@ -47,13 +47,42 @@ if(NOT ANDROID)
 
     # 编译主程序（主机版本）
     add_executable(patch main.cpp)
-    target_include_directories(patch PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/include)
+    target_include_directories(patch PRIVATE 
+        ${CMAKE_CURRENT_BINARY_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
     add_dependencies(patch generate_headers)
     target_link_libraries(patch PRIVATE -static)
 endif()
 
 # Android可执行文件配置
 if(ANDROID)
+    # 创建构建目录中的必要文件夹
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/res)
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include)
+
+    # 编译encrypt工具（Android也需要）
+    add_executable(encrypt encrypt.cpp)
+    target_compile_options(encrypt PRIVATE -O3)
+
+    # 生成加密文件
+    add_custom_command(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/res/kpimg.enc
+        COMMAND $<TARGET_FILE:encrypt> 
+                ${CMAKE_CURRENT_SOURCE_DIR}/res/kpimg 
+                ${CMAKE_CURRENT_BINARY_DIR}/res/kpimg.enc
+        DEPENDS encrypt
+        COMMENT "Generating encrypted kpimg"
+    )
+
+    # 生成头文件的自定义命令
+    add_custom_command(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/include/kpimg_enc.h
+        COMMAND xxd -i ${CMAKE_CURRENT_BINARY_DIR}/res/kpimg.enc 
+                > ${CMAKE_CURRENT_BINARY_DIR}/include/kpimg_enc.h
+        DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/res/kpimg.enc
+    )
+
     # 生成Android头文件
     add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/include/kptools_android.h
@@ -71,7 +100,8 @@ if(ANDROID)
     # 添加Android可执行文件
     add_executable(patch_android main.cpp)
     target_include_directories(patch_android PRIVATE 
-        ${CMAKE_CURRENT_BINARY_DIR}/include
+        ${CMAKE_CURRENT_BINARY_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}
     )
     add_dependencies(patch_android generate_android_headers)
 

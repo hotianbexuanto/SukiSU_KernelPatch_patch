@@ -12,9 +12,12 @@
 #include <vector>
 #include <filesystem>
 #include <sys/syscall.h>
-#include "include/kpimg_enc.h"
-#include "include/kptools_linux.h"
-#include "include/kptools_android.h"
+#include "kpimg_enc.h"
+#ifdef __ANDROID__
+#include "kptools_android.h"
+#else
+#include "kptools_linux.h"
+#endif
 #include "include/header.h"
 
 #if !defined(__NR_memfd_create)
