@@ -67,7 +67,7 @@ jobs:
             kernel/kpimg.elf-linux
             kernel/kpimg.elf-android
           name: kpimg.elf
-      
+
       - name: Upload kpimg artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -93,7 +93,6 @@ jobs:
           generateReleaseNotes: true
           allowUpdates: true
           replacesArtifacts: true
- 
 
   Build-patch-linux:
     runs-on: ubuntu-latest
@@ -157,7 +156,6 @@ jobs:
             patch/build-linux/patch_linux
           allowUpdates: true
           replacesArtifacts: true
- 
 
   Build-patch-android:
     runs-on: ubuntu-latest
@@ -232,7 +230,6 @@ jobs:
             patch/build-android/patch_android
           allowUpdates: true
           replacesArtifacts: true
- 
 
   Release-user-lib:
     runs-on: ubuntu-latest
@@ -269,7 +266,6 @@ jobs:
             kpuser.zip
           allowUpdates: true
           replacesArtifacts: true
- 
 
   Build-android-kptools:
     runs-on: ubuntu-latest
@@ -334,7 +330,6 @@ jobs:
             tools/build/android/kptools-android
           allowUpdates: true
           replacesArtifacts: true
- 
 
   Build-kptools-linux:
     runs-on: ubuntu-latest
@@ -384,7 +379,7 @@ jobs:
             tools/build/kptools-linux
           allowUpdates: true
           replacesArtifacts: true
- 
+
   Build-kptools-windows-msys2:
     runs-on: windows-2022
     permissions:
@@ -416,8 +411,8 @@ jobs:
         run: |
           cp .\kernel\include\preset.h .\tools\
           cd tools
-          (Get-Content -Path "Makefile") -replace '\$\(CC\)', " x86_64-pc-msys-gcc.exe" | Set-Content -Path "Makefile"
-          (Get-Content -Path "Makefile") -replace '\${CC}', "x86_64-pc-msys-gcc.exe" | Set-Content -Path "Makefile"
+          (Get-Content -Path "Makefile") -replace '\$\(CC\)', "gcc" | Set-Content -Path "Makefile"
+          (Get-Content -Path "Makefile") -replace '\${CC}', "gcc" | Set-Content -Path "Makefile"
       - name: build
         shell: cmd
         run: |
@@ -435,7 +430,7 @@ jobs:
           cp .\tools\kptools.exe .\win\kptools-msys2.exe
           cp C:\a\_temp\msys64\usr\bin\msys-2.0.dll .\win
           cp C:\a\_temp\msys64\usr\bin\msys-z.dll .\win
-          7z a kptools-msys2-win .\win 
+          7z a kptools-msys2-win .\win
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -500,6 +495,3 @@ jobs:
             tools/build/kptools-mac
           allowUpdates: true
           replacesArtifacts: true
- 
-
-
