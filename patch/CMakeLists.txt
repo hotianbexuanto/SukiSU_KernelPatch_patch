@@ -39,20 +39,11 @@ if(NOT ANDROID)
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/res/kptools-linux
     )
 
-
-if(NOT ANDROID)
     add_custom_target(generate_headers ALL
         DEPENDS
             ${CMAKE_CURRENT_BINARY_DIR}/include/kpimg_enc.h
             ${CMAKE_CURRENT_BINARY_DIR}/include/kptools_linux.h
     )
-else()
-    add_custom_target(generate_headers ALL
-        DEPENDS
-            ${CMAKE_CURRENT_BINARY_DIR}/include/kpimg_enc.h
-            ${CMAKE_CURRENT_BINARY_DIR}/include/kptools_android.h
-    )
-endif()
 
     # 编译主程序（主机版本）
     add_executable(patch main.cpp)
@@ -71,11 +62,18 @@ if(ANDROID)
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/res/kptools-android
     )
 
+    add_custom_target(generate_android_headers ALL
+        DEPENDS
+            ${CMAKE_CURRENT_BINARY_DIR}/include/kpimg_enc.h
+            ${CMAKE_CURRENT_BINARY_DIR}/include/kptools_android.h
+    )
+
     # 添加Android可执行文件
     add_executable(patch_android main.cpp)
     target_include_directories(patch_android PRIVATE 
         ${CMAKE_CURRENT_BINARY_DIR}/include
     )
+    add_dependencies(patch_android generate_android_headers)
 
     # 静态链接配置
     set_target_properties(patch_android PROPERTIES

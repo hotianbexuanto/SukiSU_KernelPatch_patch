@@ -67,6 +67,17 @@ jobs:
             kernel/kpimg.elf-linux
             kernel/kpimg.elf-android
           name: kpimg.elf
+      
+      - name: Upload kpimg artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: |
+            kernel/kpimg-linux
+            kernel/kpimg-android
+            kpms/demo-hello/demo-hello.kpm
+            kpms/demo-inlinehook/demo-inlinehook.kpm
+            kpms/demo-syscallhook/demo-syscallhook.kpm
+          name: Build-kpimg-artifact
 
       - name: Release
         uses: ncipollo/release-action@v1.14.0
@@ -111,15 +122,23 @@ jobs:
       - name: Prepare files
         run: |
           mkdir -p patch/res
-          cp ./artifacts/kpimg.elf/kpimg-linux ./patch/res/kpimg
-          cp ./artifacts/Build-android-kptools-artifact/kptools-android ./patch/res/kptools-android
-          cp ./artifacts/Build-kptools-linux-artifact/kptools-linux ./patch/res/kptools-linux
+          find ./artifacts -name "kpimg-linux" -exec cp {} ./patch/res/kpimg \;
+          find ./artifacts -name "kptools-android" -exec cp {} ./patch/res/kptools-android \;
+          find ./artifacts -name "kptools-linux" -exec cp {} ./patch/res/kptools-linux \;
       - name: Build patch-linux
         run: |
           cd patch
           mkdir -p build-linux && cd build-linux
           cmake .. && make
+          ls -la
           mv patch patch_linux
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: |
+            patch/build-linux/patch_linux
+          name: Build-patch-linux-artifact
+
       - name: Release
         uses: ncipollo/release-action@v1.14.0
         with:
@@ -164,9 +183,9 @@ jobs:
       - name: Prepare files
         run: |
           mkdir -p patch/res
-          cp ./artifacts/kpimg.elf/kpimg-android ./patch/res/kpimg
-          cp ./artifacts/Build-android-kptools-artifact/kptools-android ./patch/res/kptools-android
-          cp ./artifacts/Build-kptools-linux-artifact/kptools-linux ./patch/res/kptools-linux
+          find ./artifacts -name "kpimg-android" -exec cp {} ./patch/res/kpimg \;
+          find ./artifacts -name "kptools-android" -exec cp {} ./patch/res/kptools-android \;
+          find ./artifacts -name "kptools-linux" -exec cp {} ./patch/res/kptools-linux \;
       - name: Build patch-android
         run: |
           cd patch
@@ -178,7 +197,14 @@ jobs:
             -DANDROID_PLATFORM=android-33 \
             -DANDROID_STL=c++_static
           cmake --build .
-          mv patch_android patch_android
+          ls -la
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: |
+            patch/build-android/patch_android
+          name: Build-patch-android-artifact
+
       - name: Release
         uses: ncipollo/release-action@v1.14.0
         with:
@@ -213,6 +239,7 @@ jobs:
           cd kernel
           make hdr
           cd ..
+          ls -la user/
           zip -r kpuser.zip user
 
       - name: Release
@@ -262,6 +289,7 @@ jobs:
       - name: Build kptools-android
         run: |
           cd tools
+          cp ../kernel/include/preset.h .
           mkdir -p build/android && cd build/android
           echo ${{ steps.setup-ndk.outputs.ndk-path }}
           cmake \
@@ -271,6 +299,13 @@ jobs:
             -DANDROID_ABI=arm64-v8a ../..
           cmake --build .
           mv kptools kptools-android
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: |
+            tools/build/android/kptools-android
+          name: Build-android-kptools-artifact
 
       - name: Release
         uses: ncipollo/release-action@v1.14.0
@@ -308,12 +343,19 @@ jobs:
 
       - name: Build kptools
         run: |
-          export ANDROID=1
           cd tools
+          cp ../kernel/include/preset.h .
           mkdir -p build && cd build
           cmake ..
           make
           mv kptools kptools-linux
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: |
+            tools/build/kptools-linux
+          name: Build-kptools-linux-artifact
 
       - name: Release
         uses: ncipollo/release-action@v1.14.0
@@ -376,8 +418,15 @@ jobs:
           cp C:\a\_temp\msys64\usr\bin\msys-2.0.dll .\win
           cp C:\a\_temp\msys64\usr\bin\msys-z.dll .\win
           7z a kptools-msys2-win .\win 
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: |
+            kptools-msys2-win.7z
+          name: Build-kptools-windows-msys2-artifact
+
       - name: Release
-        uses: ncipollo/release-action@v1.12.0
+        uses: ncipollo/release-action@v1.14.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ env.VERSION }}
@@ -411,12 +460,19 @@ jobs:
 
       - name: Build kptools
         run: |
-          export ANDROID=1
           cd tools
+          cp ../kernel/include/preset.h .
           mkdir -p build && cd build
           cmake ..
           make
           mv kptools kptools-mac
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: |
+            tools/build/kptools-mac
+          name: Build-kptools-mac-artifact
+
       - name: Release
         uses: ncipollo/release-action@v1.14.0
         with:
@@ -428,60 +484,4 @@ jobs:
           replacesArtifacts: true
  
 
-  # 统一构建任务，同时构建Android、Linux和Windows版本
-  Build-all-platforms:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    needs: [Build-kpimg, Build-android-kptools, Build-kptools-linux, Build-kptools-windows-msys2, Build-patch-linux, Build-patch-android]
-    steps:
-      - name: Check out
-        uses: actions/checkout@v4
-      - name: Generate version
-        id: parse_version
-        run: |
-          MAJOR=$(grep '#define MAJOR' version | awk '{print $3}')
-          MINOR=$(grep '#define MINOR' version | awk '{print $3}')
-          PATCH=$(grep '#define PATCH' version | awk '{print $3}')
-          VERSION="$MAJOR.$MINOR.$PATCH"
-          echo "Generated Version: $VERSION"
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: ./artifacts
-      - name: Prepare release assets
-        run: |
-          mkdir -p release-assets
-          # 复制kpimg文件
-          cp ./artifacts/Build-kpimg-artifact/kpimg-linux ./release-assets/
-          cp ./artifacts/Build-kpimg-artifact/kpimg-android ./release-assets/
-          # 复制kptools文件
-          cp ./artifacts/Build-android-kptools-artifact/kptools-android ./release-assets/
-          cp ./artifacts/Build-kptools-linux-artifact/kptools-linux ./release-assets/
-          # 复制KPM模块
-          cp ./artifacts/Build-kpimg-artifact/demo-hello.kpm ./release-assets/
-          cp ./artifacts/Build-kpimg-artifact/demo-inlinehook.kpm ./release-assets/
-          cp ./artifacts/Build-kpimg-artifact/demo-syscallhook.kpm ./release-assets/
-          # 复制patch工具
-          cp ./artifacts/Build-patch-linux-artifact/patch_linux ./release-assets/
-          cp ./artifacts/Build-patch-android-artifact/patch_android ./release-assets/
-          # 复制Windows工具
-          cp ./artifacts/Build-kptools-windows-msys2-artifact/kptools-msys2-win.7z ./release-assets/
-      - name: Create unified release
-        uses: ncipollo/release-action@v1.14.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ steps.parse_version.outputs.VERSION }}
-          artifacts: |
-            release-assets/*
-          name: "Unified Release v${{ steps.parse_version.outputs.VERSION }}"
-          body: |
-            This is a unified release containing builds for all platforms:
-            - Android: kpimg-android, kptools-android
-            - Linux: kpimg-linux, kptools-linux, patch_linux
-            - Windows: kptools-msys2-win.7z (includes kptools and required DLLs)
-            - KPM modules: demo-hello.kpm, demo-inlinehook.kpm, demo-syscallhook.kpm
-            - Patch tools: patch_android
-          allowUpdates: true
-          replacesArtifacts: true
+
