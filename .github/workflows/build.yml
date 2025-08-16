@@ -421,7 +421,7 @@ jobs:
       - name: Showinfo
         shell: cmd
         run: |
-          ls C:\a\_temp\
+          dir C:\a\_temp\
 
       - name: Copyfile2
         shell: pwsh
