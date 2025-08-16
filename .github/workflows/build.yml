@@ -421,15 +421,15 @@ jobs:
       - name: Showinfo
         shell: cmd
         run: |
-          dir C:\a\_temp\
+          dir %RUNNER_TEMP%\msys64\usr\bin\
 
       - name: Copyfile2
         shell: pwsh
         run: |
           mkdir .\win
           cp .\tools\kptools.exe .\win\kptools-msys2.exe
-          cp C:\a\_temp\msys64\usr\bin\msys-2.0.dll .\win
-          cp C:\a\_temp\msys64\usr\bin\msys-z.dll .\win
+          cp $env:RUNNER_TEMP\msys64\usr\bin\msys-2.0.dll .\win
+          cp $env:RUNNER_TEMP\msys64\usr\bin\msys-z.dll .\win
           7z a kptools-msys2-win .\win
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
