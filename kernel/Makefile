@@ -1,5 +1,5 @@
 ifndef TARGET_COMPILE
-    TARGET_COMPILE=/root/.android/sdk/ndk/28.0.13004108/toolchains/llvm/prebuilt/linux-x86_64/bin
+    TARGET_COMPILE=/root/other/ndk/android-ndk-r29/toolchains/llvm/prebuilt/linux-x86_64/bin
 endif
 
 TARGET=kpimg
@@ -9,7 +9,7 @@ LD = $(TARGET_COMPILE)ld
 AS = $(TARGET_COMPILE)as
 OBJCOPY = $(TARGET_COMPILE)objcopy
 
-CFLAGS += -Wall -fno-builtin -std=gnu11 -nostdinc
+CFLAGS += -Wall -fno-builtin -std=gnu11 -nostdinc -mgeneral-regs-only
 CFLAGS += -g
 CFLAGS += -Wno-unused-function -Wno-return-type -Wno-c23-extensions -Wno-uninitialized
 CFLAGS += -fno-PIC -fno-asynchronous-unwind-tables -fno-stack-protector -fno-unwind-tables -fno-semantic-interposition -U_FORTIFY_SOURCE -fno-common
@@ -68,6 +68,9 @@ ${TARGET}.elf: ${OBJS}
 
 %.o: %.c
 	${CC} $(CFLAGS) $(INCLUDE) -c -O2 -o $@ $<
+
+base/sha256.o: base/sha256.c
+	${CC} $(CFLAGS) $(INCLUDE) -c -O0 -o $@ $<
 
 %.o: %.S
 	${CC} $(CFLAGS) $(INCLUDE) -c -o $@ $<

@@ -6,7 +6,7 @@ TOOLS=$(pwd)/tools
 PATCH=$(pwd)/patch
 KERNEL=$(pwd)/kernel
 
-export NDK_HOME=/root/.android/sdk/ndk/28.0.13004108
+export NDK_HOME=/root/other/ndk/android-ndk-r29
 # 构建 Android 版本
 cd $TOOLS
 rm -rf build
@@ -35,7 +35,7 @@ make
 
 cd $HOME
 
-export ANDROID_NDK=/root/.android/sdk/ndk/28.0.13004108
+export ANDROID_NDK=/root/other/ndk/android-ndk-r29
 
 rm -rf $PATCH/res/kpimg.enc
 rm -rf $PATCH/res/kpimg
